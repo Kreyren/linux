@@ -1,0 +1,13 @@
+# https://github.com/gitpod-io/template-nixos/blob/main/Makefile
+
+image:
+  file: .gitpod.Dockerfile
+tasks:
+  - init: |
+      direnv allow
+      mkdir -p /home/gitpod/.config/nix &&
+      echo 'sandbox = false' >> /home/gitpod/.config/nix/nix.conf
+
+vscode:
+  extensions:
+    - bbenoist.Nix

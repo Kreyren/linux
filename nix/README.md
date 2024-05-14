@@ -1,0 +1,1 @@
+Files and configuration needed for the Nix Daemon's repository management

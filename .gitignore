@@ -104,6 +104,9 @@ modules.order
 !.kunitconfig
 !.mailmap
 !.rustfmt.toml
+!.gitpod.yml
+!.github
+!.devcontainer
 
 #
 # Generated include files
@@ -171,3 +174,14 @@ sphinx_*/
 
 # Rust analyzer configuration
 /rust-project.json
+
+# Nix outputs
+result
+result/
+
+#
+# Code Editor temporary pathnames
+#
+
+# vscodium/vscode
+/.vscode
