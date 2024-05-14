@@ -8,6 +8,7 @@
 #include "sun50i-a64-cpu-opp.dtsi"
 
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/gpio-keys.h>
 #include <dt-bindings/input/input.h>
 #include <dt-bindings/pwm/pwm.h>
 
@@ -18,6 +19,7 @@
 
 	aliases {
 		serial0 = &uart0;
+		ethernet0 = &rtl8723bs;
 	};
 
 	backlight: backlight {
@@ -37,6 +39,18 @@
 			eDP12-supply = <&reg_dldo3>;
 		};
 	};
+
+	// TODO(Krey): For HDMI
+	// hdmi-connector {
+	// 	compatible = "hdmi-connector";
+	// 	type = "c"; // NOTE(Krey): Unsure
+
+	// 	port {
+	// 		hdmi_con_in: endpoint {
+	// 			remote-endpoint = <&hdmi_out_con>;
+	// 		};
+	// 	};
+	// };
 
 	gpio-keys {
 		compatible = "gpio-keys";
@@ -221,6 +235,10 @@
 };
 
 #include "axp803.dtsi"
+
+&axp803 {
+	x-powers,drive-vbus-en;
+}
 
 &ac_power_supply {
 	status = "okay";
