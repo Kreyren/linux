@@ -1,0 +1,524 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * SDM845 Xiaomi Mi 8 Pro (equuleus) device tree
+ *
+ * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2018, XiaoMi, Inc.
+ * Copyright (c) 2024, Jacob Hrbek <kreyren@fsfe.org>
+ */
+
+/dts-v1/;
+
+#include "sdm845-xiaomi-mi8-common.dtsi"
+
+/ {
+	model = "Xiaomi Technologies, Inc. Equuleus MP v2.1";
+	compatible = "xiaomi,equuleus", "qcom,sdm845", "qcom,mtp", "qcom,sdm845-mtp",;
+	
+	/* required for bootloader to select correct board */
+	// REVIEW(Krey): https://github.com/LineageOS/android_kernel_xiaomi_sdm845/blob/lineage-21/arch/arm64/boot/dts/qcom/equuleus-mp-v2.1.dts#L25
+	qcom,board-id = <79 0>;
+
+	// REVIEW(Krey): Taken from 5.12.8 port
+	/* Regulators */
+	vph_pwr: vph-pwr-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vph_pwr";
+		regulator-min-microvolt = <3700000>;
+		regulator-max-microvolt = <3700000>;
+	};
+
+	// REVIEW(Krey): Taken from 5.12.8 port
+	/*
+	 * Apparently RPMh does not provide support for PM8998 S4 because it
+	 * is always-on; model it as a fixed regulator.
+	 */
+	vreg_s4a_1p8: pm8998-smps4 {
+		compatible = "regulator-fixed";
+		regulator-name = "vreg_s4a_1p8";
+
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+
+		regulator-boot-on;
+		vin-supply = <&vph_pwr>;
+	};
+};
+
+// REVIEW(Krey): I feels like this should be converted on a new method that uses `regulators-{0,1,2}`, but i don't know how to do that in a functional way
+&apps_rsc {
+	pm8998-rpmh-regulators {
+		compatible = "qcom,pm8998-rpmh-regulators";
+		qcom,pmic-id = "a";
+
+		vdd-s1-supply = <&vph_pwr>;
+		vdd-s2-supply = <&vph_pwr>;
+		vdd-s3-supply = <&vph_pwr>;
+		vdd-s4-supply = <&vph_pwr>;
+		vdd-s5-supply = <&vph_pwr>;
+		vdd-s6-supply = <&vph_pwr>;
+		vdd-s7-supply = <&vph_pwr>;
+		vdd-s8-supply = <&vph_pwr>;
+		vdd-s9-supply = <&vph_pwr>;
+		vdd-s10-supply = <&vph_pwr>;
+		vdd-s11-supply = <&vph_pwr>;
+		vdd-s12-supply = <&vph_pwr>;
+		vdd-s13-supply = <&vph_pwr>;
+		vdd-l1-l27-supply = <&vreg_s7a_1p025>;
+		vdd-l2-l8-l17-supply = <&vreg_s3a_1p35>;
+		vdd-l3-l11-supply = <&vreg_s7a_1p025>;
+		vdd-l4-l5-supply = <&vreg_s7a_1p025>;
+		vdd-l6-supply = <&vph_pwr>;
+		vdd-l7-l12-l14-l15-supply = <&vreg_s5a_2p04>;
+		vdd-l9-supply = <&vreg_bob>;
+		vdd-l10-l23-l25-supply = <&vreg_bob>;
+		vdd-l13-l19-l21-supply = <&vreg_bob>;
+		vdd-l16-l28-supply = <&vreg_bob>;
+		vdd-l18-l22-supply = <&vreg_bob>;
+		vdd-l20-l24-supply = <&vreg_bob>;
+		vdd-l26-supply = <&vreg_s3a_1p35>;
+		vin-lvs-1-2-supply = <&vreg_s4a_1p8>;
+
+		vreg_s2a_1p125: smps2 {
+			regulator-min-microvolt = <1100000>;
+			regulator-max-microvolt = <1100000>;
+		};
+
+		vreg_s3a_1p35: smps3 {
+			regulator-min-microvolt = <1352000>;
+			regulator-max-microvolt = <1352000>;
+		};
+
+		vreg_s5a_2p04: smps5 {
+			regulator-min-microvolt = <1904000>;
+			regulator-max-microvolt = <2040000>;
+		};
+
+		vreg_s7a_1p025: smps7 {
+			regulator-min-microvolt = <900000>;
+			regulator-max-microvolt = <1028000>;
+		};
+
+		vdd_qusb_hs0:
+		vdda_hp_pcie_core:
+		vdda_mipi_csi0_0p9:
+		vdda_mipi_csi1_0p9:
+		vdda_mipi_csi2_0p9:
+		vdda_mipi_dsi0_pll:
+		vdda_mipi_dsi1_pll:
+		vdda_qlink_lv:
+		vdda_qlink_lv_ck:
+		vdda_qrefs_0p875:
+		vdda_pcie_core:
+		vdda_pll_cc_ebi01:
+		vdda_pll_cc_ebi23:
+		vdda_sp_sensor:
+		vdda_ufs1_core:
+		vdda_ufs2_core:
+		vdda_usb1_ss_core:
+		vdda_usb2_ss_core:
+		vreg_l1a_0p875: ldo1 {
+			regulator-min-microvolt = <880000>;
+			regulator-max-microvolt = <880000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vddpx_10:
+		vreg_l2a_1p2: ldo2 {
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+			regulator-always-on;
+		};
+
+		vreg_l3a_1p0: ldo3 {
+			regulator-min-microvolt = <1000000>;
+			regulator-max-microvolt = <1000000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vdd_wcss_cx:
+		vdd_wcss_mx:
+		vdda_wcss_pll:
+		vreg_l5a_0p8: ldo5 {
+			regulator-min-microvolt = <800000>;
+			regulator-max-microvolt = <800000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vddpx_13:
+		vreg_l6a_1p8: ldo6 {
+			regulator-min-microvolt = <1856000>;
+			regulator-max-microvolt = <1856000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l7a_1p8: ldo7 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l8a_1p2: ldo8 {
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1248000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l9a_1p8: ldo9 {
+			regulator-min-microvolt = <1704000>;
+			regulator-max-microvolt = <2928000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l10a_1p8: ldo10 {
+			regulator-min-microvolt = <1704000>;
+			regulator-max-microvolt = <2928000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l11a_1p0: ldo11 {
+			regulator-min-microvolt = <1000000>;
+			regulator-max-microvolt = <1048000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vdd_qfprom:
+		vdd_qfprom_sp:
+		vdda_apc1_cs_1p8:
+		vdda_gfx_cs_1p8:
+		vdda_qrefs_1p8:
+		vdda_qusb_hs0_1p8:
+		vddpx_11:
+		vreg_l12a_1p8: ldo12 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vddpx_2:
+		vreg_l13a_2p95: ldo13 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <2960000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l14a_1p88: ldo14 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l15a_1p8: ldo15 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l16a_2p7: ldo16 {
+			regulator-min-microvolt = <2704000>;
+			regulator-max-microvolt = <2704000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l17a_1p3: ldo17 {
+			regulator-min-microvolt = <1304000>;
+			regulator-max-microvolt = <1304000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l18a_2p7: ldo18 {
+			regulator-min-microvolt = <2704000>;
+			regulator-max-microvolt = <2960000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l19a_3p0: ldo19 {
+			regulator-min-microvolt = <2856000>;
+			regulator-max-microvolt = <3104000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l20a_2p95: ldo20 {
+			regulator-min-microvolt = <2704000>;
+			regulator-max-microvolt = <2960000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l21a_2p95: ldo21 {
+			regulator-min-microvolt = <2704000>;
+			regulator-max-microvolt = <2960000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l22a_2p85: ldo22 {
+			regulator-min-microvolt = <2864000>;
+			regulator-max-microvolt = <3312000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l23a_3p3: ldo23 {
+			regulator-min-microvolt = <3000000>;
+			regulator-max-microvolt = <3312000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vdda_qusb_hs0_3p1:
+		vreg_l24a_3p075: ldo24 {
+			regulator-min-microvolt = <3088000>;
+			regulator-max-microvolt = <3088000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l25a_3p3: ldo25 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3312000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vdda_hp_pcie_1p2:
+		vdda_hv_ebi0:
+		vdda_hv_ebi1:
+		vdda_hv_ebi2:
+		vdda_hv_ebi3:
+		vdda_mipi_csi_1p25:
+		vdda_mipi_dsi0_1p2:
+		vdda_mipi_dsi1_1p2:
+		vdda_pcie_1p2:
+		vdda_ufs1_1p2:
+		vdda_ufs2_1p2:
+		vdda_usb1_ss_1p2:
+		vdda_usb2_ss_1p2:
+		vreg_l26a_1p2: ldo26 {
+			regulator-min-microvolt = <1200000>;
+			regulator-max-microvolt = <1200000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_l28a_3p0: ldo28 {
+			regulator-min-microvolt = <2856000>;
+			regulator-max-microvolt = <3008000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_HPM>;
+		};
+
+		vreg_lvs1a_1p8: lvs1 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+		};
+
+		vreg_lvs2a_1p8: lvs2 {
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+		};
+	};
+
+	pmi8998-rpmh-regulators {
+		compatible = "qcom,pmi8998-rpmh-regulators";
+		qcom,pmic-id = "b";
+
+		vdd-bob-supply = <&vph_pwr>;
+
+		vreg_bob: bob {
+			regulator-min-microvolt = <3312000>;
+			regulator-max-microvolt = <3600000>;
+			regulator-initial-mode = <RPMH_REGULATOR_MODE_AUTO>;
+			regulator-allow-bypass;
+		};
+	};
+
+	pm8005-rpmh-regulators {
+		compatible = "qcom,pm8005-rpmh-regulators";
+		qcom,pmic-id = "c";
+
+		vdd-s1-supply = <&vph_pwr>;
+		vdd-s2-supply = <&vph_pwr>;
+		vdd-s3-supply = <&vph_pwr>;
+		vdd-s4-supply = <&vph_pwr>;
+
+		vreg_s3c_0p6: smps3 {
+			regulator-min-microvolt = <600000>;
+			regulator-max-microvolt = <600000>;
+		};
+	};
+};
+
+// REVIEW(Krey): Used by beryllium, which uses the same PMIC, but different display for this to likely not work
+&mdss_dsi0 {
+	status = "okay";
+	vdda-supply = <&vreg_l26a_1p2>;
+
+	display_panel: panel@0 {
+		reg = <0>;
+		vddio-supply = <&vreg_l14a_1p8>;
+		vddpos-supply = <&lab>;
+		vddneg-supply = <&ibb>;
+
+		backlight = <&pmi8998_wled>;
+		reset-gpios = <&tlmm 6 GPIO_ACTIVE_LOW>;
+
+		status = "disabled";
+
+		port {
+			panel_in_0: endpoint {
+				remote-endpoint = <&mdss_dsi0_out>;
+			};
+		};
+	};
+};
+
+// REVIEW(Krey): Taken from beryllium, unsure if it's correct
+&pmi8998_flash {
+	status = "okay";
+
+	// REVIEW(Krey): Unsure how to figure this out and so commenting out to reduce the risk of hardware damage
+	// led-0 {
+	// 	function = LED_FUNCTION_FLASH;
+	// 	color = <LED_COLOR_ID_WHITE>;
+	// 	led-sources = <1>;
+	// 	led-max-microamp = <500000>;
+	// 	flash-max-microamp = <1500000>;
+	// 	flash-max-timeout-us = <1280000>;
+	// };
+
+	// led-1 {
+	// 	function = LED_FUNCTION_FLASH;
+	// 	color = <LED_COLOR_ID_YELLOW>;
+	// 	led-sources = <2>;
+	// 	led-max-microamp = <500000>;
+	// 	flash-max-microamp = <1500000>;
+	// 	flash-max-timeout-us = <1280000>;
+	// };
+};
+
+// REVIEW(Krey): On beryllium.. Commented out as i don't know how to verify this and to reduce the risk of hardware damage
+/* QUAT I2S Uses 1 I2S SD Line for audio on TAS2559/60 amplifiers */
+// &q6afedai {
+// 	dai@22 {
+// 		reg = <QUATERNARY_MI2S_RX>;
+// 		qcom,sd-lines = <0>;
+// 	};
+// };
+
+// REVIEW(Krey): Unsure about these..
+
+// &sdhc_2 {
+// 	status = "okay";
+
+// 	pinctrl-names = "default";
+// 	pinctrl-0 = <&sdc2_default_state &sdc2_card_det_n>;
+
+// 	vmmc-supply = <&vreg_l21a_2p95>;
+// 	vqmmc-supply = <&vreg_l13a_2p95>;
+
+// 	bus-width = <4>;
+// 	cd-gpios = <&tlmm 126 GPIO_ACTIVE_HIGH>;
+// };
+
+// &sound {
+// 	compatible = "qcom,db845c-sndcard", "qcom,sdm845-sndcard";
+// 	pinctrl-0 = <&quat_mi2s_active
+// 			&quat_mi2s_sd0_active>;
+// 	pinctrl-names = "default";
+// 	model = "Xiaomi Poco F1";
+// 	audio-routing =
+// 		"RX_BIAS", "MCLK",
+// 		"AMIC1", "MIC BIAS1",
+// 		"AMIC2", "MIC BIAS2",
+// 		"AMIC3", "MIC BIAS3";
+
+// 	mm1-dai-link {
+// 		link-name = "MultiMedia1";
+// 		cpu {
+// 			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA1>;
+// 		};
+// 	};
+
+// 	mm2-dai-link {
+// 		link-name = "MultiMedia2";
+// 		cpu {
+// 			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
+// 		};
+// 	};
+
+// 	mm3-dai-link {
+// 		link-name = "MultiMedia3";
+// 		cpu {
+// 			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA3>;
+// 		};
+// 	};
+
+// 	mm4-dai-link {
+// 		link-name = "MultiMedia4";
+// 		cpu {
+// 			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA4>;
+// 		};
+// 	};
+
+// 	dai-link-voicemmode1 {
+// 		link-name = "VoiceMMode1";
+// 		cpu {
+// 			sound-dai = <&q6voicedai VOICEMMODE1>;
+// 		};
+// 	};
+
+// 	tas2559-dai-link {
+// 		link-name = "Primary Spkr Playback";
+// 		cpu {
+// 			sound-dai = <&q6afedai QUATERNARY_MI2S_RX>;
+// 		};
+
+// 		platform {
+// 			sound-dai = <&q6routing>;
+// 		};
+
+// 		codec {
+// 			sound-dai =  <&tas2559_codec 0>;
+// 		};
+// 	};
+
+// 	slim-dai-link {
+// 		link-name = "SLIM Playback";
+// 		cpu {
+// 			sound-dai = <&q6afedai SLIMBUS_0_RX>;
+// 		};
+
+// 		platform {
+// 			sound-dai = <&q6routing>;
+// 		};
+
+// 		codec {
+// 			sound-dai = <&wcd9340 0>;
+// 		};
+// 	};
+
+// 	slimcap-dai-link {
+// 		link-name = "SLIM WCD Capture";
+// 		cpu {
+// 			sound-dai = <&q6afedai SLIMBUS_0_TX>;
+// 		};
+
+// 		platform {
+// 			sound-dai = <&q6routing>;
+// 		};
+
+// 		codec {
+// 			sound-dai = <&wcd9340 1>; /* AIF1_CAP */
+// 		};
+// 	};
+
+// 	slimcap2-dai-link {
+// 		link-name = "SLIM WCD Capture 2";
+// 		cpu {
+// 			sound-dai = <&q6afedai SLIMBUS_1_TX>;
+// 		};
+
+// 		platform {
+// 			sound-dai = <&q6routing>;
+// 		};
+
+// 		codec {
+// 			sound-dai = <&wcd9340 3>; /* AIF2_CAP */
+// 		};
+// 	};
+// };

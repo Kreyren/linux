@@ -1,0 +1,682 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * SDM845 Xiaomi Mi 8 Explorer Edition (ursa) device tree
+ *
+ * Copyright (c) 2021, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2024, Jacob Hrbek <kreyren@fsfe.org>
+ *
+ * Relevant Materials:
+ *  1. FDT Dump From MUIU (Android): https://github.com/user-attachments/files/16667567/fdt_dump.txt
+ *  2. Compatibility submitted in sdm845-mainline for kernel version 5.12.8: https://gitlab.com/sdm845-mainline/linux/-/commit/9a023cf2ea5fa4a22c1ad5039240f08a3c5432cf
+ *  3. Firmware Breakdown: https://wiki.debian.org/InstallingDebianOn/SHIFT/SHIFT6mq#Firmware
+ *  4. DTS in linux 4.9 from LineageOS: https://github.com/LineageOS/android_kernel_xiaomi_sdm845
+*   5. Dmesg dump from LineageOS 21: https://github.com/user-attachments/files/16684801/android.log
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/leds/common.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/linux-event-codes.h>
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
+#include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
+#include <dt-bindings/sound/qcom,q6asm.h>
+#include <dt-bindings/sound/qcom,q6afe.h>
+#include <dt-bindings/sound/qcom,q6asm.h>
+#include <dt-bindings/sound/qcom,q6voice.h>
+#include "sdm845.dtsi"
+#include "sdm845-wcd9340.dtsi"
+
+// REVIEW(Krey): In Ref. 5 on Line 311~313 it outputs these used
+#include "pm8998.dtsi" // PMIC@SID0: PM8998 v2.0 options: 0, 0, 0, 0↵
+#include "pm8005.dtsi" // PMIC@SID4: PM8005 v2.0 options: 0, 0, 0, 0↵
+#include "pmi8998.dtsi" // PMIC@SID2: PMI8998 v2.1 options: 0, 0, 0, 0↵
+
+/*
+ * Delete following upstream (sdm845.dtsi) reserved
+ * memory mappings which are different in this family of devices.
+ */
+/delete-node/ &tz_mem; // Does not seem to exist on this family of devices
+/delete-node/ &adsp_mem;
+/delete-node/ &wlan_msa_mem;
+/delete-node/ &mpss_region;
+/delete-node/ &venus_mem;
+/delete-node/ &cdsp_mem;
+/delete-node/ &mba_region;
+/delete-node/ &slpi_mem;
+/delete-node/ &spss_mem;
+/delete-node/ &rmtfs_mem;
+
+/ {
+	// REVIEW(Krey): The formfactor is 'slate', but the DTS doesn't differenciate it?
+	chassis-type = "handset";
+	qcom,msm-id = <321 0x20001>;
+
+	aliases {
+		serial0 = &uart9;
+		serial1 = &uart6;
+	};
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	/* Reserved memory changes from downstream */
+	reserved-memory {
+		/*
+		 * From Dump of /sys/firmware/fdt on URSA (Equuleus) in Android:
+		 * - hyp_region@85700000
+		 * - xbl_region@85e00000
+		 * - removed_region@85fc0000
+		 * - qseecom_region@0x8ab00000
+		 * - camera_region@0x8bf00000
+		 * - ips_fw_region@0x8c400000
+		 * - ipa_gsi_region@0x8c410000
+		 * - gpu_region@0x8c415000
+		 * - adsp_region@0x8c500000
+		 * - wlan_fw_region@0x8e300000
+		 * - modem_region@0x8e400000
+		 * - video_region@0x95c00000
+		 * - cdsp_region@0x96100000
+		 * - mba_region@0x96900000
+		 * - slpi_region@0x96b00000
+		 * - pil_spss_region@0x97f00000
+		 * - cont_splash_region@9d400000
+		 * - ramoops@b0000000
+		 * - ramdump_fb_region@af000000
+		 */
+
+		adsp_mem: adsp@8c500000 {
+			reg = <0 0x8c500000 0 0x1e00000>;
+			no-map;
+		};
+
+		wlan_msa_mem: wlan-msa@8e300000 {
+			reg = <0 0x8e300000 0 0x100000>;
+			no-map;
+		};
+
+		mpss_region: mpss@8e400000 {
+			reg = <0 0x8e400000 0 0x7800000>;
+			no-map;
+		};
+
+		venus_mem: venus@95c00000 {
+			reg = <0 0x95c00000 0 0x500000>;
+			no-map;
+		};
+
+		cdsp_mem: cdsp@96100000 {
+			reg = <0 0x96100000 0 0x800000>;
+			no-map;
+		};
+
+		mba_region: mba@96900000 {
+			reg = <0 0x96900000 0 0x200000>;
+			no-map;
+		};
+
+		slpi_mem: slpi@96b00000 {
+			reg = <0 0x96b00000 0 0x1400000>;
+			no-map;
+		};
+
+		spss_mem: spss@97f00000 {
+			reg = <0 0x97f00000 0 0x100000>;
+			no-map;
+		};
+
+		/*
+		 * The rmtfs memory region in downstream is 'dynamically allocated'
+		 * but given the same address every time. Hard code it as this address is
+		 * where the modem firmware expects it to be.
+		 */
+		rmtfs_mem: rmtfs@f7301000 {
+			compatible = "qcom,rmtfs-mem";
+			reg = <0 0xf7301000 0 0x200000>;
+			no-map;
+
+			qcom,client-id = <1>;
+			qcom,vmid = <15>;
+		};
+		
+		/*
+		 * It seems like reserving the old rmtfs_mem region is also needed to prevent
+		 * random crashes which are most likely modem related, more testing needed.
+		 */
+		removed_region: removed-region@88f00000 {
+			no-map;
+			reg = <0 0x88f00000 0 0x200000>;
+		};
+	};
+};
+
+&adsp_pas {
+	status = "okay";
+	firmware-name = "qcom/sdm845/mi8/adsp.mbn";
+};
+
+&cdsp_pas {
+	status = "okay";
+	firmware-name = "qcom/sdm845/mi8/cdsp.mbn";
+};
+
+&gcc {
+	protected-clocks = <GCC_QSPI_CORE_CLK>,
+			   <GCC_QSPI_CORE_CLK_SRC>,
+			   <GCC_QSPI_CNOC_PERIPH_AHB_CLK>,
+			   <GCC_LPASS_Q6_AXI_CLK>,
+			   <GCC_LPASS_SWAY_CLK>;
+};
+
+// REVIEW(Krey): Needed? Used by beryllium
+&gmu {
+	status = "okay";
+};
+
+// REVIEW(Krey): Needed? Used by beryllium
+&gpi_dma0 {
+	status = "okay";
+};
+
+// REVIEW(Krey): Needed? Used by beryllium
+&gpi_dma1 {
+	status = "okay";
+};
+
+&gpu {
+	status = "okay";
+
+	zap-shader {
+		memory-region = <&gpu_mem>;
+		firmware-name = "qcom/sdm845/mi8/a630_zap.mbn";
+	};
+};
+
+// REVIEW(Krey): Used by beryllium which should use the same modem for these to be valid?
+&ibb {
+	regulator-min-microvolt = <4600000>;
+	regulator-max-microvolt = <6000000>;
+	regulator-over-current-protection;
+	regulator-pull-down;
+	regulator-soft-start;
+	qcom,discharge-resistor-kohms = <300>;
+};
+
+&lab {
+	regulator-min-microvolt = <4600000>;
+	regulator-max-microvolt = <6000000>;
+	// REVIEW(Krey): Unsure why is this commented out
+	// regulator-over-current-protection;
+	regulator-pull-down;
+	regulator-soft-start;
+};
+
+&mdss {
+	status = "okay";
+};
+
+&mdss_dsi0_out {
+	remote-endpoint = <&panel_in_0>;
+	data-lanes = <0 1 2 3>;
+};
+
+&mdss_dsi0_phy {
+	status = "okay";
+	vdds-supply = <&vreg_l1a_0p875>;
+};
+
+/* Modem/wifi*/
+&mss_pil {
+	status = "okay";
+	firmware-name = "qcom/sdm845/mi8/mba.mbn", "qcom/sdm845/mi8/modem.mbn";
+};
+
+&ipa {
+	qcom,gsi-loader = "self";
+	memory-region = <&ipa_fw_mem>;
+	firmware-name = "qcom/sdm845/mi8/ipa_fws.mbn";
+	status = "okay";
+};
+
+// REVIEW(Krey): Taken from beryllium, unsure if it's correct
+&i2c5 {
+	#dma-cells = <3>;
+	status="okay";
+
+	dmas = <&gpi_dma0 0 5 QCOM_GPI_I2C>,
+		   <&gpi_dma0 1 5 QCOM_GPI_I2C>;
+	dma-names = "tx", "rx";
+
+	/*smart PA*/
+	tas2559_codec: tas2559@4c{
+		#sound-dai-cells = <1>;
+		compatible = "ti,tas2559";
+		reg = <0x4c>;
+		ti,tas2559-reset-gpio = <&tlmm 12 0>;
+		ti,tas2560-reset-gpio = <&tlmm 76 0>;
+		ti,tas2559-addr = <0x4c>;
+		ti,tas2560-addr = <0x4d>;
+	};
+};
+
+// REVIEW(Krey): Taken from beryllium, unsure if it's correct
+&pm8998_gpios {
+	vol_up_pin_a: vol-up-active-state {
+		pins = "gpio6";
+		function = "normal";
+		input-enable;
+		bias-pull-up;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_NO>;
+	};
+};
+
+// REVIEW(Krey): Taken from beryllium, unsure if it's correct
+&pmi8998_lpg {
+	status = "okay";
+
+	led@5 {
+		reg = <5>;
+		color = <LED_COLOR_ID_WHITE>;
+		function = LED_FUNCTION_STATUS;
+	};
+};
+
+// REVIEW(Krey): Taken from beryllium, unsure if it's correct
+&pmi8998_wled {
+	status = "okay";
+	qcom,current-boost-limit = <970>;
+	qcom,ovp-millivolt = <29600>;
+	qcom,current-limit-microamp = <20000>;
+	qcom,num-strings = <2>;
+	qcom,switching-freq = <600>;
+	qcom,external-pfet;
+	qcom,cabc;
+};
+
+// REVIEW(Krey): Taken from beryllium, unsure if it's correct as equuleus support Quick Charge 4.0 where beryllium only Quick Charge 3.0
+&pmi8998_charger {
+	monitored-battery = <&battery>;
+
+	status = "okay";
+};
+
+&pmi8998_fg {
+	status = "okay";
+
+	power-supplies = <&pmi8998_charger>;
+	monitored-battery = <&battery>;
+};
+
+&pm8998_resin {
+	linux,code = <KEY_VOLUMEDOWN>;
+	status = "okay";
+};
+
+&q6asmdai {
+	dai@0 {
+		reg = <0>;
+	};
+
+	dai@1 {
+		reg = <1>;
+	};
+
+	dai@2 {
+		reg = <2>;
+	};
+
+	dai@3 {
+		reg = <3>;
+	};
+};
+
+&pmi8998_haptics {
+	status = "okay";
+	qcom,wave-play-rate-us = <4878>;
+};
+
+&q6cvp {
+	status = "okay";
+};
+
+&q6cvs {
+	status = "okay";
+};
+
+&q6mvm {
+	status = "okay";
+};
+
+&qupv3_id_0 {
+	status = "okay";
+};
+
+
+&qupv3_id_1 {
+	status = "okay";
+};
+
+&qup_uart9_rx {
+	drive-strength = <2>;
+	bias-pull-up;
+};
+
+&qup_uart9_tx {
+	drive-strength = <2>;
+	bias-disable;
+};
+
+&tlmm {
+	gpio-reserved-ranges = <0 4>, <81 4>;
+
+	// REVIEW(Krey): Unsure..
+	// cam0_default: cam0_default {
+	// 	rst {
+	// 		pins = "gpio80";
+	// 		function = "gpio";
+
+	// 		drive-strength = <2>;
+	// 		bias-disable;
+	// 	};
+
+	// 	avdd {
+	// 		pins = "gpio40";
+	// 		function = "gpio";
+
+	// 		drive-strength = <2>;
+	// 		bias-disable;
+	// 	};
+
+	// 	mclk0 {
+	// 		pins = "gpio13";
+	// 		function = "cam_mclk";
+
+	// 		drive-strength = <2>;
+	// 		bias-disable;
+	// 	};
+	// };
+
+	// sdc2_default_state: sdc2-default-state {
+	// 	clk-pins {
+	// 		pins = "sdc2_clk";
+	// 		bias-disable;
+	// 		drive-strength = <16>;
+	// 	};
+
+	// 	cmd-pins {
+	// 		pins = "sdc2_cmd";
+	// 		bias-pull-up;
+	// 		drive-strength = <10>;
+	// 	};
+
+	// 	data-pins {
+	// 		pins = "sdc2_data";
+	// 		bias-pull-up;
+	// 		drive-strength = <10>;
+	// 	};
+	// };
+
+	// sdc2_card_det_n: sd-card-det-n-state {
+	// 	pins = "gpio126";
+	// 	function = "gpio";
+	// 	bias-pull-up;
+	// };
+
+	// ts_int_default: ts-int-default-state {
+	// 	pins = "gpio31";
+	// 	function = "gpio";
+	// 	drive-strength = <16>;
+	// 	bias-pull-down;
+	// 	input-enable;
+	// };
+
+	// ts_reset_default: ts-reset-default-state {
+	// 	pins = "gpio32";
+	// 	function = "gpio";
+	// 	drive-strength = <16>;
+	// 	output-high;
+	// };
+
+	// ts_int_sleep: ts-int-sleep-state {
+	// 	pins = "gpio31";
+	// 	function = "gpio";
+	// 	drive-strength = <2>;
+	// 	bias-pull-down;
+	// 	input-enable;
+	// };
+
+	// ts_reset_sleep: ts-reset-sleep-state {
+	// 	pins = "gpio32";
+	// 	function = "gpio";
+	// 	drive-strength = <2>;
+	// 	bias-disable;
+	// 	output-low;
+	// };
+};
+
+&uart6 {
+	status = "okay";
+
+	// REVIEW(Krey): Unsure..
+	// pinctrl-0 = <&qup_uart6_4pin>;
+
+	// bluetooth {
+	// 	compatible = "qcom,wcn3990-bt";
+
+	// 	vddio-supply = <&vreg_s4a_1p8>;
+	// 	vddxo-supply = <&vreg_l7a_1p8>;
+	// 	vddrf-supply = <&vreg_l17a_1p3>;
+	// 	vddch0-supply = <&vreg_l25a_3p3>;
+	// 	max-speed = <3200000>;
+	// };
+};
+
+&uart9 {
+	label = "LS-UART1";
+	status = "okay";
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&ufs_mem_hc {
+	status = "okay";
+
+	reset-gpios = <&tlmm 150 GPIO_ACTIVE_LOW>;
+
+	vcc-supply = <&vreg_l20a_2p95>;
+	vcc-max-microamp = <600000>;
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&ufs_mem_phy {
+	status = "okay";
+	vdda-phy-supply = <&vdda_ufs1_core>;
+	vdda-pll-supply = <&vdda_ufs1_1p2>;
+};
+
+&usb_1 {
+	status = "okay";
+};
+
+&usb_1_dwc3 {
+	dr_mode = "peripheral";
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&usb_1_hsphy {
+	status = "okay";
+
+	vdd-supply = <&vdda_usb1_ss_core>;
+	vdda-pll-supply = <&vdda_qusb_hs0_1p8>;
+	vdda-phy-dpdm-supply = <&vdda_qusb_hs0_3p1>;
+
+	qcom,imp-res-offset-value = <8>;
+	qcom,hstx-trim-value = <QUSB2_V2_HSTX_TRIM_21_6_MA>;
+	qcom,preemphasis-level = <QUSB2_V2_PREEMPHASIS_5_PERCENT>;
+	qcom,preemphasis-width = <QUSB2_V2_PREEMPHASIS_WIDTH_HALF_BIT>;
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&usb_1_qmpphy {
+	status = "okay";
+
+	vdda-phy-supply = <&vdda_usb1_ss_1p2>;
+	vdda-pll-supply = <&vdda_usb1_ss_core>;
+};
+
+&usb_2 {
+	status = "okay";
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&usb_2_dwc3 {
+	/*
+	 * Though the USB block on SDM845 can support host, there's no vbus
+	 * signal for this port on MTP. Thus (unless you have a non-compliant
+	 * hub that works without vbus) the only sensible thing is to force
+	 * peripheral mode.
+	 */
+	dr_mode = "peripheral";
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&usb_2_hsphy {
+	status = "okay";
+
+	vdd-supply = <&vdda_usb2_ss_core>;
+	vdda-pll-supply = <&vdda_qusb_hs0_1p8>;
+	vdda-phy-dpdm-supply = <&vdda_qusb_hs0_3p1>;
+
+	qcom,imp-res-offset-value = <8>;
+	qcom,hstx-trim-value = <QUSB2_V2_HSTX_TRIM_22_8_MA>;
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&usb_2_qmpphy {
+	status = "okay";
+
+	vdda-phy-supply = <&vdda_usb2_ss_1p2>;
+	vdda-pll-supply = <&vdda_usb2_ss_core>;
+};
+
+&venus {
+	status = "okay";
+	firmware-name = "qcom/sdm845/mi8/venus.mbn";
+};
+
+// REVIEW(Krey): Taken from beryllium, unsure..
+// &wcd9340 {
+// 	reset-gpios = <&tlmm 64 GPIO_ACTIVE_HIGH>;
+// 	vdd-buck-supply = <&vreg_s4a_1p8>;
+// 	vdd-buck-sido-supply = <&vreg_s4a_1p8>;
+// 	vdd-tx-supply = <&vreg_s4a_1p8>;
+// 	vdd-rx-supply = <&vreg_s4a_1p8>;
+// 	vdd-io-supply = <&vreg_s4a_1p8>;
+// 	qcom,micbias1-microvolt = <2700000>;
+// 	qcom,micbias2-microvolt = <1800000>;
+// 	qcom,micbias3-microvolt = <2700000>;
+// 	qcom,micbias4-microvolt = <2700000>;
+// };
+
+// REVIEW(Krey): Taken from 5.12.8 port
+&wifi {
+	status = "okay";
+
+	vdd-0.8-cx-mx-supply = <&vreg_l5a_0p8>;
+	vdd-1.8-xo-supply = <&vreg_l7a_1p8>;
+	vdd-1.3-rfa-supply = <&vreg_l17a_1p3>;
+	vdd-3.3-ch0-supply = <&vreg_l25a_3p3>;
+};
+
+// REVIEW(Krey): Taken from 5.12.8 port, not needed anymore?
+// /* PINCTRL - additions to nodes defined in sdm845.dtsi */
+
+// &qup_i2c10_default {
+// 	pinconf {
+// 		pins = "gpio55", "gpio56";
+// 		drive-strength = <2>;
+// 		bias-disable;
+// 	};
+// };
+
+// &qup_uart9_default {
+// 	pinconf-tx {
+// 		pins = "gpio4";
+// 		drive-strength = <2>;
+// 		bias-disable;
+// 	};
+
+// 	pinconf-rx {
+// 		pins = "gpio5";
+// 		drive-strength = <2>;
+// 		bias-pull-up;
+// 	};
+// };
+
+&slpi_pas {
+	firmware-name = "qcom/sdm845/mi8/slpi.mbn";
+	status = "okay";
+};
+
+&cci {
+	status = "okay";
+};
+
+// REVIEW(Krey): Unsure..
+// &camss {
+// 	vdda-phy-supply = <&vreg_l1a_0p875>;
+// 	vdda-pll-supply = <&vreg_l26a_1p2>;
+
+// 	vdda-csi0-supply = <&vdda_mipi_csi0_0p9>;
+// 	vdda-csi1-supply = <&vdda_mipi_csi1_0p9>;
+// 	vdda-csi2-supply = <&vdda_mipi_csi2_0p9>;
+
+// 	status = "okay";
+
+// 	ports {
+// 		#address-cells = <1>;
+// 		#size-cells = <0>;
+// 		port@0 {
+// 			reg = <0>;
+// 			csiphy0_ep: endpoint {
+// 				clock-lanes = <7>;
+// 				data-lanes = <0 1 2 3>;
+// 				remote-endpoint = <&imx363_ep>;
+// 			};
+// 		};
+// 	};
+// };
+
+// &cci_i2c0 {
+// 	camera@10 {
+// 		compatible = "sony,imx363";
+// 		reg = <0x10>;
+
+// 		reset-gpios = <&tlmm 80 0>;
+// 		pinctrl-names = "default";
+// 		pinctrl-0 = <&cam0_default>;
+
+// 		clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
+// 		clock-names = "xvclk";
+// 		clock-frequency = <24000000>;
+
+// 		vif-supply = <&cam_iovdd>;
+// 		vana-supply = <&cam0_avdd>;
+// 		vdig-supply = <&cam0_dvdd>;
+
+// 		orientation = <1>;
+// 		rotation = <270>;
+
+// 		status = "okay";
+
+// 		port {
+// 			imx363_ep: endpoint {
+// 				clock-lanes = <1>;
+// 				data-lanes = <1 2 3 4>;
+// 				link-frequencies = /bits/ 64 <636000000>;
+// 				remote-endpoint = <&csiphy0_ep>;
+// 			};
+// 		};
+// 	};
+// };

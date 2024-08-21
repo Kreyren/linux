@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * SDM845 Xiaomi Mi 8 Explorer Edition (ursa) device tree
+ *
+ * Copyright (c) 2017, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2018, XiaoMi, Inc.
+ * Copyright (c) 2024, Jacob Hrbek <kreyren@fsfe.org>
+ */
+
+/dts-v1/;
+
+#include "sdm845-xiaomi-mi8-common.dtsi"
+
+/ {
+	model = "Xiaomi Technologies, Inc. Ursa MP v2.1";
+	compatible = "xiaomi,ursa", "qcom,sdm845-mtp", "qcom,sdm845", "qcom,mtp";
+
+	/* required for bootloader to select correct board */
+	// REVIEW(Krey): https://github.com/LineageOS/android_kernel_xiaomi_sdm845/blob/lineage-21/arch/arm64/boot/dts/qcom/ursa-mp-v2.1.dts#L25
+	qcom,board-id = <89 0>;
+};
